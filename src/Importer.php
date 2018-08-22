@@ -7,23 +7,12 @@ use Reader\Reader;
 class Importer {
     
     public $sourceData=null;
-    private $colCount=0;
-    private $rowCount=0;
     private $schema=array();
-    private $lBoundRow=null;
-    private $uBoundRow=null;
     
     public function __construct($src=null){
         if ($src instanceof Reader) $this->sourceData=&$src;
     }
-    
-    public function limitRows($start=null,$end=null){
-        if (is_numeric($start)) $this->lBoundRow=intval($start);
-        if (is_numeric($end)) $this->uBoundRow=intval($end);
-        if ($start===false) $this->lBoundRow=null;
-        if ($end===false) $this->uBoundRow=null;
-    }
-    
+            
     public function setSchema($what){
         if (is_array($what)){            
             $j=range(intval(key($what)),$k+count($what));
@@ -42,26 +31,47 @@ class Importer {
         }
     }
     
+    public function OneToOne(array $targets){
+        if (!($this->sourceData instanceof Reader)){
+            //Oltre che fesso sei pure cornuto....
+            throw new Exception("Invalid sourceData given!");
+        }
+        if ($this->sourceData->hasHeader()){
+            $h=$this->sourceData->header();
+        }else{
+            $h=range(0,count($this->sourceData)-1);
+        }
+        if (!empty($h)){
+            if (count($h)!=count($targets)){
+                throw new Exception("Targets array size mismatch!");
+            }
+            $this->schema=array();
+            foreach ($h as $i => $hc) {
+                $f=new Field;
+                $f->column($hc);
+                $f->setTarget($targets[$i]);
+                $this->setSchema($f);
+            }
+        }
+    }
+    
+    public function unSetSchema(){
+        $this->schema=array();
+    }
+    
+    public function getSchema(){
+        return $this->schema;
+    }
+    
     public function extractData(){
         if (!($this->sourceData instanceof Reader)){
             //Oltre che fesso sei pure cornuto....
             throw new Exception("Invalid sourceData given!");
         }
         if (empty($this->schema)) return array(); //Sei un fesso...
-        if ($this->sourceData->isEmpty()) return array(); //Sei un fesso...
-        $ret=array();
-        if (is_null($this->lBoundRow)){
-            $iStart=0;
-        }else{
-            $iStart=max($this->lBoundRow,0);
-        }
-        if (is_null($this->uBoundRow)){
-            $iEnd=count($this->sourceData)-1;            
-        }else{
-            $iEnd=min(count($this->sourceData),$this->uBoundRow)-1;
-        }
+        if ($this->sourceData->isEmpty()) return array(); //Sei un fesso...        
         $ret=array();        
-        for ($r=$iStart;$r<=$iEnd;$r++){
+        for ($r=0;$r<count($this->sourceData);$r++){
             $row=array();
             foreach ($this->schema as $col) $row=array_merge($row,$col->toArray($this->sourceData[$r],$r));
             $ret[]=$row;

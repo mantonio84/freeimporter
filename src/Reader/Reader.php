@@ -7,12 +7,16 @@ class Reader implements \Countable, \ArrayAccess{
     protected $container=array();
     protected $header=array();
     
-    public function setHeaderLine($index){
+    public function setHeader($index){
         $index=intval($index);
         if (($index>=0) and ($index<count($this->container))){
             $this->header=$this->container[$index];
             $this->container=array_slice($this->container,$index+1);
         }
+    }
+    
+    public function removeHeader(){
+        $this->header=array();
     }
     
     public function header($col=null){
@@ -49,6 +53,23 @@ class Reader implements \Countable, \ArrayAccess{
                 }
             }
         }
+    }
+    
+    public function addColumn($index,array $data){
+        $a=count($this->container);
+        if (count($data)!=$a) throw new Exception("Data array must contains $a rows!");        
+        if ($index===null) {
+            if ($this->hasHeader()){
+                throw new Exception("An index must be given for tables with headers!");
+            }else{
+                $index=$this->colCount();
+            }
+        }
+        if ($this->hasHeader()){
+            $this->header[]=$index;
+            $index=$this->colCount();
+        }
+        for ($i=0;$i<$a;$i++) $this->container[$i][$index]=$data[$i];
     }
     
     public function getColumn($index){
@@ -105,6 +126,35 @@ class Reader implements \Countable, \ArrayAccess{
     public function isEmpty(){
         return ($this->count()==0);
     }  
+    
+    public function limitRows($start,$length=null){        
+        $start=intval($start);
+        if (is_numeric($length)){
+            $this->container=array_slice($this->container,$start,$length);
+        }else{
+            $this->container=array_slice($this->container,$start);
+        }
+    }
+    
+    public function limitCols($start,$length=null){
+        $start=intval($start);        
+        $this->container=array_map(function ($itm) use ($start,$length){
+            if (is_numeric($length)){
+                $length=intval($length);
+                return array_slice($itm,$start,$length);
+            }else{
+                return array_slice($itm,$start);
+            }        
+        },$this->container);        
+    }
+    
+    public function toArray(){
+        return $this->container;
+    }
+    
+    public function fromArray(array $arr){
+        $this->container=&$arr;
+    }
     
     public function beginResume(){
         $data=json_encode(array("chk" => md5(microtime(true)), "container" => $this->container, "header" => $this->header));
