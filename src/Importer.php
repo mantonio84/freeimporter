@@ -7,7 +7,7 @@ use Reader\Reader;
 class Importer {
     
     public $sourceData=null;
-    private $schema=array();
+    protected $schema=array();
     
     public function __construct($src=null){
         if ($src instanceof Reader) $this->sourceData=&$src;
