@@ -8,10 +8,15 @@ class Reader implements \Countable, \ArrayAccess{
     protected $header=array();
     
     public function setHeader($index){
-        $index=intval($index);
-        if (($index>=0) and ($index<count($this->container))){
-            $this->header=$this->container[$index];
-            $this->container=array_slice($this->container,$index+1);
+        if (is_array($index)){            
+            if (count($index)!=count(reset($this->container))) throw new Exception("Index array size mismatch!");
+            $this->header=$index;
+        }else{        
+            $index=intval($index);
+            if (($index>=0) and ($index<count($this->container))){
+                $this->header=$this->container[$index];
+                $this->container=array_slice($this->container,$index+1);
+            }
         }
     }
     
