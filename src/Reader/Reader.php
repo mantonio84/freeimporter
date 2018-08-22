@@ -106,5 +106,11 @@ class Reader implements \Countable, \ArrayAccess{
         return ($this->count()==0);
     }  
     
+    public function beginResume(){
+        $data=json_encode(array("chk" => md5(microtime(true)), "container" => $this->container, "header" => $this->header));
+        $path=tempnam(sys_get_temp_dir(), "fri-");
+        file_put_contents($path,$data);
+        return $path;        
+    }
 }
 ?>
