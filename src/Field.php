@@ -1,5 +1,5 @@
 <?php
-namespace mantonio84\FreeImporter;
+namespace Mantonio84\FreeImporter;
 
 
 class Field {

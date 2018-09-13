@@ -1,6 +1,6 @@
 <?php
 
-namespace mantonio84\FreeImporter\Reader;
+namespace Mantonio84\FreeImporter\Reader;
 
 class CSV extends Reader implements \Countable, \ArrayAccess {    
     
