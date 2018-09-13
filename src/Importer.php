@@ -59,18 +59,31 @@ class Importer {
         if (($index>=0) and ($index<count($this->schema))) $this->schema=array_splice($this->schema,$index,1);
     }
     
-    public function extractData(){
+    public function extractData($schemaArray=null){       
         if (!($this->sourceData instanceof Reader)){
             //Oltre che fesso sei pure cornuto....
             throw new Exception("Invalid sourceData given!");
-        }
-        if (empty($this->schema)) return array(); //Sei un fesso...
+        }                
         if ($this->sourceData->isEmpty()) return array(); //Sei un fesso...        
-        $ret=array();        
+        $ret=array();
+        if (!is_array($schemaArray)) $schemaArray=null;
+        $check=__NAMESPACE__."\Adapters\ColumnAdapter";        
         foreach ($this->sourceData as $rowIndex => $rowData){
             $row=array();
             foreach ($rowData as $colHeader => $value){
-                $row=array_merge($ret,$this->parseSchema($rowIndex,$rowData,$colHeader,$value));
+                if ($schemaArray===null){
+                    $row=array_merge($ret,$this->parseSchema($rowIndex,$rowData,$colHeader,$value));
+                }else{
+                    if (array_key_exists($colHeader,$schemaArray)){
+                        $scm=$schemaArray[$colHeader];
+                        if (is_subclass_of($scm,$check)){
+                            $scm->prepare($rowIndex,$rowData);
+                            if ($scm->validate($value)){
+                                $row[$scm->target()]=$scm->value($value);
+                            }
+                        }
+                    }
+                }
             }
             $ret[]=$row;
         }
@@ -81,8 +94,7 @@ class Importer {
         if (empty($this->schema)) return null;
         $ret=null;
          foreach ($this->schema as &$scm){
-            $scm->rowIndex=null;
-            $scm->rowData=null;
+            $scm->prepare(null,null);
             if ($scm->held($colHeader)){
                 $ret=$scm;
                 break;
@@ -104,8 +116,7 @@ class Importer {
         if (empty($value)) return array();
         $ret=array();
         foreach ($this->schema as &$scm){
-            $scm->rowIndex=$rowIndex;
-            $scm->rowData=$rowData;
+            $scm->prepare($rowIndex,$rowData);
             if ($scm->held($colHeader)){
                 if ($scm->validate($value)){                    
                     $ret[$scm->target()]=$scm->value();
