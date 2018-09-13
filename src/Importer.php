@@ -9,6 +9,18 @@ class Importer {
     public $sourceData=null;
     protected $schema=array();
     
+    public static function fromFile(string $filePath,array $params=array()){
+    if (!is_file($filePath)) throw new Exception("Unable to open file '".$filePath."'!");
+        $ext=strtoupper(pathinfo($filePath,PATHINFO_EXTENSION));
+        $className=__NAMESPACE__.'\\Reader\\'.$ext;
+        if (class_exists($ext)){
+            array_unshift($params,$filePath);
+            return new static(new $className(...$params));
+        }else{
+            throw new Exception("Unable to find a valid reader for '".$filePath."'!");
+        }
+    }
+    
     public function __construct($src=null){
         if ($src instanceof Reader) $this->sourceData=&$src;
     }

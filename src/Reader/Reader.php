@@ -6,6 +6,7 @@ class Reader implements \Countable, \ArrayAccess{
     
     protected $container=array();
     protected $header=array();
+
     
     public function setHeader($index){
         if (is_array($index)){            
@@ -163,9 +164,7 @@ class Reader implements \Countable, \ArrayAccess{
     
     public function beginResume(){
         $data=json_encode(array("chk" => md5(microtime(true)), "container" => $this->container, "header" => $this->header));
-        $path=tempnam(sys_get_temp_dir(), "fri-");
-        file_put_contents($path,$data);
-        return $path;        
+        return base64_encode($data);        
     }
 }
 ?>

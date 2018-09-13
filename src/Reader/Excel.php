@@ -6,9 +6,13 @@ use \PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
 class Excel extends Reader implements \Countable, \ArrayAccess {
     
-    public function __construct($filePath,$sheetName,$interval="auto",$rowsFilter=null){        
-        $spreadsheet = IOFactory::load($filePath);                          
-        $sheet=$spreadsheet->getSheetByName($sheetName);
+    public function __construct($filePath,$sheetName=null,$interval="auto",$rowsFilter=null){        
+        $spreadsheet = IOFactory::load($filePath);    
+        if (!is_null($sheetName)){                      
+            $sheet=$spreadsheet->getSheetByName($sheetName);
+        }else{
+            $sheet=$spreadsheet->getActiveSheet();
+        }
         if ($interval==="auto"){            
             $highestRow = $sheet->getHighestRow();            
             $highestColumn = Coordinate::columnIndexFromString($sheet->getHighestColumn());            
