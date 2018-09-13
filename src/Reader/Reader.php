@@ -130,7 +130,7 @@ class Reader implements \Countable, \ArrayAccess, \Iterator{
     public function offsetGet($offset) {
         $offset=intval($offset);
         if ($this->offsetExists($offset)){
-            if ($this->hasHeader()){
+            if (!$this->hasHeader()){
                 return $this->container[$offset];
             }else{
                 return array_combine($this->header,$this->container[$offset]);

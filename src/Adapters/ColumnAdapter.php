@@ -8,6 +8,7 @@ interface ColumnAdapter {
     public function validate($input);
     public function value($input);    
     public function prepare($rowIndex,$rowData);
+    public function label();
 }
 
 ?>

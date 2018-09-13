@@ -8,14 +8,20 @@ class SimpleColumn implements ColumnAdapter {
     
     protected $rowData=null;
     protected $rowIndex=null;        
+    protected $lbl=null;
     
-    public function __construct($source,$target){                
+    public function __construct($source,$target,$label){                
         $this->tgt=$target;        
         if (!is_array($source)) $source=array($source);
         foreach ($source as $s){
             $s=$this->removeSpaces($s);
             if (!empty($s)) $this->src[]=$s;
-        }               
+        }       
+        $this->lbl=$label;        
+    }
+    
+    public function label(){
+        return $this->lbl;
     }
     
     public function held($sourceColumnHeader){        
@@ -41,9 +47,10 @@ class SimpleColumn implements ColumnAdapter {
     }
     
     protected function removeSpaces($original){        
-        $spaces=array(" ","_","-","/","|",".");
-        $none=array_fill(0,count($spaces),"");
-        return str_replace($spaces,strtolower(trim($original)),$none);
+        $spaces=array("_","-","/","|",".");
+        $none=array_fill(0,count($spaces)," ");
+        $ret=ucwords(str_replace($spaces,$none,strtolower(trim($original))));
+        return str_replace(" ","",$ret);        
     }
 }
 

@@ -28,8 +28,16 @@ class Importer {
         
     }
             
-    public function schemaAdd(ColumnAdapter $a){
-        $this->schema[]=&$a;
+   public function schemaAdd($a){
+        $valid=false;
+        if (is_object($a)){
+            $check=__NAMESPACE__."\Adapters\ColumnAdapter";
+            if (is_subclass_of($a,$check)){
+                $this->schema[]=&$a;    
+                $valid=true;   
+            }   
+        }        
+        if (!$valid) throw new \InvalidArgumentException("Argument of schemaAdd must be an object that implements ColumnAdapter interface!");
     }
     
     public function schemaClear(){
@@ -60,9 +68,9 @@ class Importer {
     }
     
     public function extractData($schemaArray=null){       
-        if (!($this->sourceData instanceof Reader)){
+        if (!is_subclass_of($this->sourceData,__NAMESPACE__."\\Reader\\Reader")){
             //Oltre che fesso sei pure cornuto....
-            throw new Exception("Invalid sourceData given!");
+            throw new \Exception("Invalid sourceData given!");
         }                
         if ($this->sourceData->isEmpty()) return array(); //Sei un fesso...        
         $ret=array();
@@ -73,10 +81,10 @@ class Importer {
             foreach ($rowData as $colHeader => $value){
                 if ($schemaArray===null){
                     $row=array_merge($ret,$this->parseSchema($rowIndex,$rowData,$colHeader,$value));
-                }else{
+                }else{                    
                     if (array_key_exists($colHeader,$schemaArray)){
-                        $scm=$schemaArray[$colHeader];
-                        if (is_subclass_of($scm,$check)){
+                        $scm=$schemaArray[$colHeader];                        
+                        if (is_subclass_of($scm,$check)){                            
                             $scm->prepare($rowIndex,$rowData);
                             if ($scm->validate($value)){
                                 $row[$scm->target()]=$scm->value($value);
