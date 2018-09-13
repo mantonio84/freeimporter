@@ -1,0 +1,50 @@
+<?php
+namespace Mantonio84\FreeImporter\Adapters;
+
+class SimpleColumn implements ColumnAdapter {
+    
+    protected $src=array();
+    protected $tgt=null;
+    
+    protected $rowData=null;
+    protected $rowIndex=null;        
+    
+    public function __construct($source,$target){                
+        $this->tgt=$target;        
+        if (!is_array($source)) $source=array($source);
+        foreach ($source as $s){
+            $s=$this->removeSpaces($s);
+            if (!empty($s)) $this->src[]=$s;
+        }               
+    }
+    
+    public function held($sourceColumnHeader){        
+        if (empty($sourceColumnHeader)) return false;        
+        return in_array($this->removeSpaces($sourceColumnHeader),$this->src);
+    }
+    
+    public function target() {
+        return $this->tgt;
+    }
+    
+    public function validate($input){
+        return true;
+    }
+    
+    public function value($input){
+        return $input;
+    }
+    
+    public function prepare($rowIndex,$rowData){
+        $this->rowIndex=$rowIndex;
+        $this->rowData=$rowData;
+    }
+    
+    protected function removeSpaces($original){        
+        $spaces=array(" ","_","-","/","|",".");
+        $none=array_fill(0,count($spaces),"");
+        return str_replace($spaces,strtolower(trim($original)),$none);
+    }
+}
+
+?>

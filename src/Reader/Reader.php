@@ -2,11 +2,11 @@
 
 namespace Mantonio84\FreeImporter\Reader;
 
-class Reader implements \Countable, \ArrayAccess{
+class Reader implements \Countable, \ArrayAccess, \Iterator{
     
     protected $container=array();
     protected $header=array();
-
+    private $position=0;
     
     public function setHeader($index){
         if (is_array($index)){            
@@ -26,10 +26,20 @@ class Reader implements \Countable, \ArrayAccess{
     }
     
     public function header($col=null){
-        if (!is_numeric($col)){
-            return $this->header;
+        if ($this->hasHeader()){                    
+            if (!is_int($col)){
+                return $this->header;
+            }else{
+                return $this->header[intval($col)];
+            }
         }else{
-            return $this->header[intval($col)];
+            if (empty($this->container)) return array();
+            $a=array_keys($this->container[0]);
+            if (!is_int($col)){
+                return $a;
+            }else{
+                return $a[intval($col)];
+            }
         }
     }
     
@@ -94,6 +104,7 @@ class Reader implements \Countable, \ArrayAccess{
     }
     
     public function count(){
+        
         return count($this->container);
     }
     
@@ -119,7 +130,7 @@ class Reader implements \Countable, \ArrayAccess{
     public function offsetGet($offset) {
         $offset=intval($offset);
         if ($this->offsetExists($offset)){
-            if (empty($this->header)){
+            if ($this->hasHeader()){
                 return $this->container[$offset];
             }else{
                 return array_combine($this->header,$this->container[$offset]);
@@ -127,6 +138,26 @@ class Reader implements \Countable, \ArrayAccess{
         }else{
             return null;
         }     
+    }
+    
+    public function rewind() {        
+        $this->position = 0;
+    }
+
+    public function current() {        
+        return $this->offsetGet($this->position);
+    }
+
+    public function key() {        
+        return $this->position;
+    }
+
+    public function next() {        
+        $this->position++;
+    }
+
+    public function valid() {        
+        return $this->offsetExists($this->position);
     }
   
     public function isEmpty(){
@@ -166,5 +197,7 @@ class Reader implements \Countable, \ArrayAccess{
         $data=json_encode(array("chk" => md5(microtime(true)), "container" => $this->container, "header" => $this->header));
         return base64_encode($data);        
     }
+    
+    
 }
 ?>
