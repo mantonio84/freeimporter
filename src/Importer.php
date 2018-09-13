@@ -10,14 +10,14 @@ class Importer {
     protected $schema=array();
     
     public static function fromFile(string $filePath,array $params=array()){
-    if (!is_file($filePath)) throw new Exception("Unable to open file '".$filePath."'!");
+    if (!is_file($filePath)) throw new \Exception("Unable to open file '".$filePath."'!");
         $ext=strtoupper(pathinfo($filePath,PATHINFO_EXTENSION));
         $className=__NAMESPACE__.'\\Reader\\'.$ext;
         if (class_exists($ext)){
             array_unshift($params,$filePath);
             return new static(new $className(...$params));
         }else{
-            throw new Exception("Unable to find a valid reader for '".$filePath."'!");
+            throw new \Exception("Unable to find a valid reader for '".$filePath."'!");
         }
     }
     

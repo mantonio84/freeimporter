@@ -9,9 +9,11 @@ class CSV extends Reader implements \Countable, \ArrayAccess {
         if ($f===false) throw new Exception("Unable to open file '".$filePath."'!");
         $mx=-1;
         $toresize=false;
+        $format=null;
         while (!feof($f)) {
-            $rawLine=fgets($f);
-            $format=$this->guessLineFormat($rawLine,$otherDelimeters);
+            $rawLine=trim(fgets($f));
+            if (strlen($rawLine)<3) continue;
+            if ($format===null) $format=$this->guessLineFormat($rawLine,$otherDelimeters);
             if ($format===null) continue;
             $line=str_getcsv($rawLine,$format->delimeter,$format->enclosure,$escape);
             if ($this->isBlankCSVLive($line)) continue;           
