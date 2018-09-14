@@ -44,6 +44,10 @@ class Importer {
         if (!$valid) throw new \InvalidArgumentException("Argument of schemaAdd must be an object that implements ColumnAdapter interface!");
     }
     
+    public function schemaHas($name){
+        return array_key_exists($name,$this->schema);
+    }
+    
     public function schemaClear(){
         $this->schema=array();        
     }
@@ -66,6 +70,7 @@ class Importer {
     }
     
     public function schemaSet(array $arr){
+        $this->schemaClear();
         foreach ($arr as &$a) $this->schemaAdd($a);
     }
     
@@ -96,7 +101,12 @@ class Importer {
                     $row=array_merge($ret,$this->parseSchema($rowIndex,$rowData,$colHeader,$value));
                 }else{                    
                     if (array_key_exists($colHeader,$schemaArray)){
-                        $scm=$schemaArray[$colHeader];                        
+                        $scm=$schemaArray[$colHeader];   
+                        if (is_string($scm)){
+                            if ($this->schemaHas($scm)){
+                                $scm=$this->schemaGet($scm);
+                            }
+                        }                     
                         if (is_subclass_of($scm,$check)){                            
                             $scm->prepare($rowIndex,$rowData);
                             if ($scm->validate($value)){
