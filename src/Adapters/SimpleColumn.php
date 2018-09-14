@@ -46,11 +46,17 @@ class SimpleColumn implements ColumnAdapter {
         $this->rowData=$rowData;
     }
     
+    public function name(){
+        return $this->removeSpaces($this->tgt);
+    }
+    
     protected function removeSpaces($original){        
         $spaces=array("_","-","/","|",".");
         $none=array_fill(0,count($spaces)," ");
         $ret=ucwords(str_replace($spaces,$none,strtolower(trim($original))));
-        return str_replace(" ","",$ret);        
+        $ret=str_replace(" ","",$ret);
+        $ret=preg_replace("/[^A-Za-z0-9\\s]/","",$ret);   
+        return $ret;     
     }
 }
 

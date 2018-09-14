@@ -9,6 +9,7 @@ interface ColumnAdapter {
     public function value($input);    
     public function prepare($rowIndex,$rowData);
     public function label();
+    public function name();
 }
 
 ?>
