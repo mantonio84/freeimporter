@@ -8,6 +8,7 @@ class Importer {
     
     public $sourceData=null;
     protected $schema=array();
+   
     
     public static function fromFile(string $filePath,array $params=array()){
     if (!is_file($filePath)) throw new \Exception("Unable to open file '".$filePath."'!");
@@ -33,38 +34,50 @@ class Importer {
         if (is_object($a)){
             $check=__NAMESPACE__."\Adapters\ColumnAdapter";
             if (is_subclass_of($a,$check)){
-                $this->schema[]=&$a;    
-                $valid=true;   
+                $name=$a->name();
+                if (!empty($name)){                                                            
+                    $this->schema[$name]=&$a;                  
+                }
+                $valid=true;
             }   
         }        
         if (!$valid) throw new \InvalidArgumentException("Argument of schemaAdd must be an object that implements ColumnAdapter interface!");
     }
     
     public function schemaClear(){
-        $this->schema=array();
+        $this->schema=array();        
     }
     
     public function schemaGet($index=null){
-        if (!is_int($index)){
-            return $this->schema;
-        }else{
-            return $this->schema[intval($index)];
-        }
-    }
-    
-    public function schemaSet(array $a){
-        $check=__NAMESPACE__."\Adapters\ColumnAdapter";
-        $this->schema=array_values(array_filter(array_map(function ($itm) use ($check){            
-            if (is_subclass_of($itm,$check)){
-                return $itm;
-            }else{
-                return null;
+        if (is_int($index)){
+            $index=intval($index);
+            if (($index>=0) and ($index<count($this->schema))){
+                $k=array_keys($this->schema);
+                return $this->schemaGet($k[$index]);
+            }            
+        }else if (is_string($index)){
+            if (array_key_exists($index,$this->schema)){
+                return $this->schema[$index];
             }
-        },$a)));
+        }else if (is_null($index)){
+            return $this->schema;            
+        }
+        return null;
     }
     
-    public function schemaRemove(integer $index){
-        if (($index>=0) and ($index<count($this->schema))) $this->schema=array_splice($this->schema,$index,1);
+    public function schemaSet(array $arr){
+        foreach ($arr as &$a) $this->schemaAdd($a);
+    }
+    
+    public function schemaRemove($index){
+        if (is_int($index)){
+            if (($index>=0) and ($index<count($this->schema))){
+                $k=array_keys($this->schema);
+                $this->schemaRemove($k[$index]);
+            }
+        }else if (is_string($index)){
+            if (array_key_exists($index,$this->schema)) unset($this->schema[$index]);
+        }
     }
     
     public function extractData($schemaArray=null){       
