@@ -50,6 +50,10 @@ class SimpleColumn implements ColumnAdapter {
         return $this->removeSpaces($this->tgt);
     }
     
+    public function __toString() {
+        return $this->name();
+    }
+    
     protected function removeSpaces($original){        
         $spaces=array("_","-","/","|",".");
         $none=array_fill(0,count($spaces)," ");

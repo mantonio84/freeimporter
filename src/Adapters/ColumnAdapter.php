@@ -10,6 +10,7 @@ interface ColumnAdapter {
     public function prepare($rowIndex,$rowData);
     public function label();
     public function name();
+    public function __toString();
 }
 
 ?>
