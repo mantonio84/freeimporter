@@ -9,14 +9,17 @@ class Reader implements \Countable, \ArrayAccess, \Iterator{
     private $position=0;
     
     public function setHeader($index){
-        if (is_array($index)){            
-            if (count($index)!=count(reset($this->container))) throw new Exception("Index array size mismatch!");
+        if (is_array($index)){   
+            $c=count(reset($this->container));
+            
+            if ((count($index)!=$c) and ($c>0)) throw new Exception("Index array size mismatch!");
             $this->header=$index;
         }else{        
             $index=intval($index);
             if (($index>=0) and ($index<count($this->container))){
                 $this->header=$this->container[$index];
-                $this->container=array_slice($this->container,$index+1);
+                unset($this->container[$index]);
+                $this->container=array_values($this->container);
             }
         }
     }
@@ -110,10 +113,21 @@ class Reader implements \Countable, \ArrayAccess, \Iterator{
     
     public function offsetSet($offset, $value) {
         $offset=intval($offset);
-        if (is_null($offset)) {
-            $this->container[] = $value;
-        } else {
-            $this->container[$offset] = $value;
+        if (is_array($value)){
+            $value=array_values($value);
+            if ($this->hasHeader()){
+                $c=count($this->header);
+            }else{
+                $c=count(reset($this->container));
+            }
+            if ((count($value)!=$c) and ($c>0)){
+                 throw new Exception("Value array size mismatch!");
+            }
+            if (is_null($offset)) {
+                $this->container[] = $value;
+            } else {
+                $this->container[$offset] = $value;
+            }
         }
     }
 
@@ -166,23 +180,27 @@ class Reader implements \Countable, \ArrayAccess, \Iterator{
     
     public function limitRows($start,$length=null){        
         $start=intval($start);
-        if (is_numeric($length)){
-            $this->container=array_slice($this->container,$start,$length);
-        }else{
+        $length=intval($length);
+        if ($length>0){
+            $this->container=array_slice($this->container,$start,$length);            
+        }else if ($start>0){
             $this->container=array_slice($this->container,$start);
         }
     }
     
     public function limitCols($start,$length=null){
         $start=intval($start);        
-        $this->container=array_map(function ($itm) use ($start,$length){
-            if (is_numeric($length)){
-                $length=intval($length);
-                return array_slice($itm,$start,$length);
-            }else{
-                return array_slice($itm,$start);
-            }        
-        },$this->container);        
+        $length=intval($length);
+        if (($start>0) or ($length>0)){
+            $this->container=array_map(function ($itm) use ($start,$length){
+                if ($length>0){                
+                    return array_slice($itm,$start,$length);
+                }else if ($start>0){
+                    return array_slice($itm,$start);
+                }        
+                return $itm;
+            },$this->container);
+        }        
     }
     
     public function toArray(){

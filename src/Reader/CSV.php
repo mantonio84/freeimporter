@@ -4,15 +4,31 @@ namespace Mantonio84\FreeImporter\Reader;
 
 class CSV extends Reader implements \Countable, \ArrayAccess {    
     
-    public function __construct(string $filePath, bool $multiLineGuess=false, string $escape = "\\", array $otherDelimeters=array()){
-        $f=fopen($filePath,"r");
-        if ($f===false) throw new Exception("Unable to open file '".$filePath."'!");
+    public function __construct(string $filePath, bool $multiLineGuess=false, string $escape = "\\", array $otherDelimeters=array(), $fromLine=null, $toLine=null){  
         $mx=-1;
         $toresize=false;
         $format=null;
+        $lineNumber=-1;
+        if ((is_int($fromLine)) and (is_int($toLine))){
+            if ($fromLine>$toLine){
+                //Sei un grandissimo fesso!
+                $fromLine=null;
+                $toLine=null;
+            }
+        }
+        ini_set("auto_detect_line_endings", true);
+        $f=fopen($filePath,"r");
+        if ($f===false) throw new Exception("Unable to open file '".$filePath."'!");
         while (!feof($f)) {
             $rawLine=trim(fgets($f));            
             if (strlen($rawLine)<3) continue;
+            $lineNumber++;
+            if (is_int($fromLine)){
+                if ($lineNumber<$fromLine) continue;
+            }
+            if (is_int($toLine)){
+                if ($lineNumber>$toLine) break;
+            }
             if (($format===null) or ($multiLineGuess===true)) $format=$this->guessLineFormat($rawLine,$otherDelimeters);
             if ($format===null) continue;
             $line=str_getcsv($rawLine,$format->delimeter,$format->enclosure,$escape);                        
@@ -20,7 +36,7 @@ class CSV extends Reader implements \Countable, \ArrayAccess {
             $c=count($line);             
             $mx=max($mx,$c);            
             if (($mx>-1) and ($c!=$mx)) $toresize=true;
-            $this->container[]=$line;
+            $this->container[]=$line;            
         }
         fclose($f);
         if ($toresize){
@@ -63,7 +79,7 @@ class CSV extends Reader implements \Countable, \ArrayAccess {
                 $firstChar=$f[0];
                 $lastChar=$f[-1];
                 if ($firstChar==$lastChar){
-                    if (!ctype_alpha($firstChar)){
+                    if (!ctype_alnum($firstChar)){
                         if ($foundEnclosure===null){
                             $foundEnclosure=$firstChar;
                         }else{
