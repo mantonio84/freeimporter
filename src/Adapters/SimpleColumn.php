@@ -12,7 +12,7 @@ class SimpleColumn implements ColumnAdapter {
     
     public function __construct($source,$target,$label){                
         $this->tgt=$target;        
-        if (!is_array($source)) $source=array($source);
+        if (!is_array($source)) $source=array($source);        
         foreach ($source as $s){
             $s=$this->removeSpaces($s);
             if (!empty($s)) $this->src[]=$s;
@@ -22,7 +22,7 @@ class SimpleColumn implements ColumnAdapter {
     
     public function label(){
         return $this->lbl;
-    }
+    } 
     
     public function held($sourceColumnHeader){        
         if (empty($sourceColumnHeader)) return false;        
@@ -54,7 +54,8 @@ class SimpleColumn implements ColumnAdapter {
         return $this->name();
     }
     
-    protected function removeSpaces($original){        
+    protected function removeSpaces($original){     
+        if (empty($original)) return $original;
         $spaces=array("_","-","/","|",".");
         $none=array_fill(0,count($spaces)," ");
         $ret=ucwords(str_replace($spaces,$none,strtolower(trim($original))));
