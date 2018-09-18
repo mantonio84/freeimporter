@@ -17,7 +17,15 @@ class SimpleColumn implements ColumnAdapter {
             $s=$this->removeSpaces($s);
             if (!empty($s)) $this->src[]=$s;
         }       
-        $this->lbl=$label;        
+        if (is_array($label)){
+            if (isset($label[$target])){
+                $this->lbl=$label[$target];
+            }else{
+                $this->lbl="";
+            }
+        }else{
+            $this->lbl=$label;
+        }        
     }
     
     public function label(){
