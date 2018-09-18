@@ -50,6 +50,13 @@ class Reader implements \Countable, \ArrayAccess, \Iterator{
         return (!empty($this->header));
     }
     
+    public function hash(){
+        if (!$this->hasHeader()) return null;
+        $h=array_map('strtolower', $this->header);
+        sort($h);
+        return sha1(get_class()."::".json_encode($h));
+    }
+    
     public function colCount(){
         return count(reset($this->container));
     }    
