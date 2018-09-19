@@ -18,7 +18,7 @@ class Importer {
             $remapExtensions=array_filter(array_map(function ($t){
                 if (!class_exists(__NAMESPACE__.'\\Reader\\'.$t)) return false;
                 return $t;
-            }));
+            },$remapExtensions));
             if (array_key_exists($ext,$remapExtensions)) $ext=$remapExtensions[$ext];
         }
         $className=__NAMESPACE__.'\\Reader\\'.$ext;
