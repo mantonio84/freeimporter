@@ -6,7 +6,12 @@ class Reader implements \Countable, \ArrayAccess, \Iterator{
     
     protected $container=array();
     protected $header=array();
+    public $fileHash="";
     private $position=0;
+    
+    protected function calculateFileHash($filePath){
+        $this->fileHash=sha1_file($filePath);
+    }
     
     public function setHeader($index){
         if (is_array($index)){   
@@ -219,7 +224,7 @@ class Reader implements \Countable, \ArrayAccess, \Iterator{
     }
     
     public function beginResume(){
-        $data=json_encode(array("chk" => md5(microtime(true)), "container" => $this->container, "header" => $this->header));
+        $data=json_encode(array("chk" => md5(microtime(true)), "container" => $this->container, "header" => $this->header, "fileHash" => $this->fileHash));
         return base64_encode($data);        
     }
     

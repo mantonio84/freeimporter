@@ -45,7 +45,7 @@ class CSV extends Reader implements \Countable, \ArrayAccess {
                 if ($d>0) $line=array_merge($line,array_fill(0,$d,null));                
             }
         }
-                        
+        $this->calculateFileHash($filePath);               
     }
     
     protected function guessLineFormat(string $line,array $otherDelimeters=array()){        
@@ -100,7 +100,7 @@ class CSV extends Reader implements \Countable, \ArrayAccess {
         if ($foundEnclosure===null) $foundEnclosure="\"";
         $ret=new \stdClass;
         $ret->delimeter=$foundDelimeter;
-        $ret->enclosure=$foundEnclosure;
+        $ret->enclosure=$foundEnclosure;        
         return $ret;
     }
     

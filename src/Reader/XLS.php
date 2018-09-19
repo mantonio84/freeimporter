@@ -4,7 +4,7 @@ namespace Mantonio84\FreeImporter\Reader;
 use \PhpOffice\PhpSpreadsheet\IOFactory;
 use \PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
-class Excel extends Reader implements \Countable, \ArrayAccess {
+class XLS extends Reader implements \Countable, \ArrayAccess {
     
     public function __construct($filePath,$sheetName=null,$interval="auto",$rowsFilter=null){        
         $spreadsheet = IOFactory::load($filePath);    
@@ -64,7 +64,8 @@ class Excel extends Reader implements \Countable, \ArrayAccess {
                 TRUE         // Should the array be indexed by cell row and cell column
             ); 
         }    
-        if (is_callable($rowsFilter)) $this->container=array_values(array_filter(array_map($rowsFilter,$this->container)));        
+        if (is_callable($rowsFilter)) $this->container=array_values(array_filter(array_map($rowsFilter,$this->container)));
+        $this->calculateFileHash($filePath);        
     }
     
     private function getRowBounds(array $row){
