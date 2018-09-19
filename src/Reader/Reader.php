@@ -8,6 +8,38 @@ class Reader implements \Countable, \ArrayAccess, \Iterator{
     protected $header=array();
     public $fileHash="";
     private $position=0;
+    private $hPrefix=null;
+    
+    private function strIntersect($a, $b){
+        $m=min(strlen($a),strlen($b));
+        if ($m==0) return "";
+        $a=str_split(substr($a,0,$m));
+        $b=str_split(substr($b,0,$m));            
+        return implode("",array_intersect_assoc($a,$b));
+    }
+
+    
+    private function guessStringPrefix(array $arr){
+        $ret="";
+        if ((count($arr)>1) and (count($arr)<=50)){
+            $ret=array();
+            for ($i=0;$i<count($arr)-1;$i++){
+                for ($k=$i+1;$k<count($arr);$k++){
+                    if ($k==$i) continue;
+                    $pr=$this->strIntersect($arr[$i],$arr[$k]);
+                    if (!isset($ret[$pr])){
+                        $ret[$pr]=1;
+                    }else{
+                        $ret[$pr]++;
+                    }
+                }
+            }
+            arsort($ret);           
+            $ret=key($ret);            
+        }
+        
+        return $ret;
+    }
     
     protected function calculateFileHash($filePath){
         $this->fileHash=sha1_file($filePath);
@@ -19,14 +51,22 @@ class Reader implements \Countable, \ArrayAccess, \Iterator{
             
             if ((count($index)!=$c) and ($c>0)) throw new Exception("Index array size mismatch!");
             $this->header=$index;
+            $this->hPrefix=null;
         }else{        
             $index=intval($index);
             if (($index>=0) and ($index<count($this->container))){
                 $this->header=$this->container[$index];
                 unset($this->container[$index]);
                 $this->container=array_values($this->container);
+                $this->hPrefix=null;
             }
         }
+    }
+    
+    public function headerPrefix(){
+        if (!$this->hasHeader()) return null;
+        if ($this->hPrefix===null) $this->hPrefix=$this->guessStringPrefix($this->header);
+        return $this->hPrefix;
     }
     
     public function removeHeader(){

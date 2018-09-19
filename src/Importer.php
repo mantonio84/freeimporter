@@ -8,7 +8,7 @@ class Importer {
     
     public $sourceData=null;
     protected $schema=array();
-   
+    private $bufferSchema=array();
     
     public static function fromFile(string $filePath,array $params=array(), array $remapExtensions = array()){
     if (!is_file($filePath)) throw new \Exception("Unable to open file '".$filePath."'!");
@@ -98,13 +98,22 @@ class Importer {
             //Oltre che fesso sei pure cornuto....
             throw new \Exception("Invalid sourceData given!");
         }                
-        if ($this->sourceData->isEmpty()) return array(); //Sei un fesso...        
+        if ($this->sourceData->isEmpty()) return array(); //Sei un fesso...
+        $this->bufferSchema=array();        
         $ret=array();
         if (!is_array($schemaArray)) $schemaArray=null;
         $check=__NAMESPACE__."\Adapters\ColumnAdapter";        
         foreach ($this->sourceData as $rowIndex => $rowData){
             $row=array();
             foreach ($rowData as $colHeader => $value){
+                if (array_key_exists($colHeader,$this->bufferSchema)){
+                    $scm=&$this->bufferSchema[$colHeader];
+                    $scm->prepare($rowIndex,$rowData);
+                    if ($scm->validate($value)){
+                        $row[$scm->target()]=$scm->value($value);
+                    }
+                    continue;
+                }
                 if ($schemaArray===null){
                     $row=array_merge($ret,$this->parseSchema($rowIndex,$rowData,$colHeader,$value));
                 }else{                    
@@ -115,7 +124,8 @@ class Importer {
                                 $scm=$this->schemaGet($scm);
                             }
                         }                     
-                        if (is_subclass_of($scm,$check)){                            
+                        if (is_subclass_of($scm,$check)){       
+                            $this->bufferSchema[$colHeader]=&$scm;
                             $scm->prepare($rowIndex,$rowData);
                             if ($scm->validate($value)){
                                 $row[$scm->target()]=$scm->value($value);
@@ -129,12 +139,23 @@ class Importer {
         return $ret;
     }    
     
+    private function checkColumnHeld(&$scm,$colHeader){
+        if ($scm->held($colHeader)) return true;
+        $pr=$this->sourceData->headerPrefix();
+        if (!empty($pr)){
+            if ((stripos($colHeader,$pr)===0) and ($colHeader!=$pr)){
+                return $scm->held(str_ireplace($pr,"",$colHeader));
+            }
+        }   
+        return false;
+    }
+    
     public function guessColumn($colHeader){
-        if (empty($this->schema)) return null;
+        if (empty($this->schema)) return null;                        
         $ret=null;
          foreach ($this->schema as &$scm){
             $scm->prepare(null,null);
-            if ($scm->held($colHeader)){
+            if ($this->checkColumnHeld($scm,$colHeader)){
                 $ret=$scm;
                 break;
             }  
@@ -156,9 +177,10 @@ class Importer {
         $ret=array();
         foreach ($this->schema as &$scm){
             $scm->prepare($rowIndex,$rowData);
-            if ($scm->held($colHeader)){
+            if ($this->checkColumnHeld($scm,$colHeader)){
+                $this->bufferSchema[$colHeader]=&$scm;
                 if ($scm->validate($value)){                    
-                    $ret[$scm->target()]=$scm->value();
+                    $ret[$scm->target()]=$scm->value();                    
                     break;
                 }
             }
