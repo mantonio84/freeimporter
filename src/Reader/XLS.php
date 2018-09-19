@@ -22,14 +22,15 @@ class XLS extends Reader implements \Countable, \ArrayAccess {
             for ($row = 1; $row <= $highestRow; $row++) {
                 $currentRowData=array();
                 $ad="A".$row.":".Coordinate::stringFromColumnIndex($highestColumn).$row;
-                $currentRowData=$sheet->rangeToArray(
+                $currentRowData=$this->removeExcelColumnNames($sheet->rangeToArray(
                     $ad,     // The worksheet range that we want to retrieve
                     NULL,    // Value that should be returned for empty cells
                     TRUE,    // Should formulas be calculated (the equivalent of getCalculatedValue() for each cell)
                     TRUE,    // Should values be formatted (the equivalent of getFormattedValue() for each cell)
                     TRUE     // Should the array be indexed by cell row and cell column
-                );                
-                $ep=$this->getRowBounds($currentRowData);
+                ));                                
+                $currentRowData=$currentRowData[0];                                
+                $ep=$this->getRowBounds($currentRowData);                                
                 if ((!$tow) and ($ep!==false)) $tow=true;                
                 if ($tow){
                     if ($ep===false) break;
@@ -47,25 +48,33 @@ class XLS extends Reader implements \Countable, \ArrayAccess {
                 }
             }
         }else if (($this->isValidAddress($interval)) and (strpos($interval,"!")!==false) and (strpos($interval,":")!==false)){                                             
-            $this->container=$sheet->rangeToArray(
+            $this->container=$this->removeExcelColumnNames($sheet->rangeToArray(
                 $interval,     // The worksheet range that we want to retrieve
                 NULL,        // Value that should be returned for empty cells
                 TRUE,        // Should formulas be calculated (the equivalent of getCalculatedValue() for each cell)
                 TRUE,        // Should values be formatted (the equivalent of getFormattedValue() for each cell)
                 TRUE         // Should the array be indexed by cell row and cell column
-            );        
+            ));        
         }else{
             $interval="A1:".$sheet->getHighestColumn().$sheet->getHighestRow();
-            $this->container=$sheet->rangeToArray(
+            $this->container=$this->removeExcelColumnNames($sheet->rangeToArray(
                 $interval,     // The worksheet range that we want to retrieve
                 NULL,        // Value that should be returned for empty cells
                 TRUE,        // Should formulas be calculated (the equivalent of getCalculatedValue() for each cell)
                 TRUE,        // Should values be formatted (the equivalent of getFormattedValue() for each cell)
                 TRUE         // Should the array be indexed by cell row and cell column
-            ); 
+            )); 
         }    
         if (is_callable($rowsFilter)) $this->container=array_values(array_filter(array_map($rowsFilter,$this->container)));
         $this->calculateFileHash($filePath);        
+    }
+    
+    private function removeExcelColumnNames($rows){
+        if (!is_array($rows)) return $rows;
+        if (empty($rows)) return $rows;
+        return array_values(array_map(function ($itm){
+            return array_values($itm);
+        },$rows));
     }
     
     private function getRowBounds(array $row){

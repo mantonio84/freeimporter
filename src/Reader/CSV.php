@@ -4,7 +4,7 @@ namespace Mantonio84\FreeImporter\Reader;
 
 class CSV extends Reader implements \Countable, \ArrayAccess {    
     
-    public function __construct(string $filePath, bool $multiLineGuess=false, string $escape = "\\", array $otherDelimeters=array(), $fromLine=null, $toLine=null){  
+    public function __construct(string $filePath, bool $multiLineGuess=false, string $escape = "\\", array $otherDelimeters=array(), bool $removeFakeEnclusures=false, $fromLine=null, $toLine=null, int $maxLineWidth=8192){  
         $mx=-1;
         $toresize=false;
         $format=null;
@@ -20,7 +20,7 @@ class CSV extends Reader implements \Countable, \ArrayAccess {
         $f=fopen($filePath,"r");
         if ($f===false) throw new Exception("Unable to open file '".$filePath."'!");
         while (!feof($f)) {
-            $rawLine=trim(fgets($f));            
+            $rawLine=trim(fgets($f,$maxLineWidth));            
             if (strlen($rawLine)<3) continue;
             $lineNumber++;
             if (is_int($fromLine)){
@@ -31,12 +31,19 @@ class CSV extends Reader implements \Countable, \ArrayAccess {
             }
             if (($format===null) or ($multiLineGuess===true)) $format=$this->guessLineFormat($rawLine,$otherDelimeters);
             if ($format===null) continue;
-            $line=str_getcsv($rawLine,$format->delimeter,$format->enclosure,$escape);                        
-            if ($this->isBlankCSVLive($line)) continue;                       
+            $line=str_getcsv($rawLine,$format->delimeter,$format->enclosure,$escape);                                    
+            if ($this->isBlankCSVLive($line)) continue;                                   
             $c=count($line);             
             $mx=max($mx,$c);            
             if (($mx>-1) and ($c!=$mx)) $toresize=true;
-            $this->container[]=$line;            
+            if ($removeFakeEnclusures===true){
+                foreach ($line as &$f){
+                    $e=$this->guessFieldEnclosure($f);
+                    if (!is_null($e)) $f=substr($f,1,-1);
+                }    
+            }
+            $this->container[]=$line;
+                        
         }
         fclose($f);
         if ($toresize){
@@ -48,10 +55,10 @@ class CSV extends Reader implements \Countable, \ArrayAccess {
         $this->calculateFileHash($filePath);               
     }
     
-    protected function guessLineFormat(string $line,array $otherDelimeters=array()){        
+    private function guessDelimiter(string $line,array $otherDelimeters=array()){
         $line=trim($line);
         if (strlen($line)<3) return null;
-        $delimeters=[",",";","/","|"];
+        $delimeters=[";",",","/","|"];
         if (!empty($otherDelimeters)){    
             $otherDelimeters=array_filter($otherDelimeters,function ($itm){
                return (strlen($itm)==0); 
@@ -68,36 +75,49 @@ class CSV extends Reader implements \Countable, \ArrayAccess {
                 }
             }            
         }
+        return $foundDelimeter;
+    }
+    
+    private function guessRowEnclosure(array $fields, string $default="\""){
+        $foundEnclosure=null; 
+        foreach ($fields as $f){
+            $fe=$this->guessFieldEnclosure($f);
+            if ($foundEnclosure===null){
+                $foundEnclosure=$fe;
+            }else{
+                if ($fe!=$foundEnclosure){
+                    $foundEnclosure=null;
+                    break;
+                }
+            }
+        } 
+        if ($foundEnclosure===null){
+            return $default;
+        }else{
+            return $foundEnclosure;
+        }
+    }
+    
+    private function guessFieldEnclosure(string $field){
+        if (strlen($field)<3) return null;
+        $ret=null;
+        $firstChar=$field[0];
+        $lastChar=$field[-1];
+        if ($firstChar==$lastChar){
+            if ((!ctype_alnum($firstChar)) and ($firstChar!=" ")){
+                $ret=$firstChar;
+            }
+        }
+        return $ret;
+    }
+    
+    protected function guessLineFormat(string $line,array $otherDelimeters=array()){        
+        $line=trim($line);
+        if (strlen($line)<3) return null;
+        $foundDelimeter=$this->guessDelimiter($line,$otherDelimeters);
         if ($foundDelimeter===null) return null;           
         $fields=str_getcsv($line,$foundDelimeter); 
-        $foundEnclosure=null;       
-        foreach ($fields as $f){
-            if (strlen($f)<2){
-                $foundEnclosure="";
-                break;
-            }else{
-                $firstChar=$f[0];
-                $lastChar=$f[-1];
-                if ($firstChar==$lastChar){
-                    if (!ctype_alnum($firstChar)){
-                        if ($foundEnclosure===null){
-                            $foundEnclosure=$firstChar;
-                        }else{
-                            if ($foundEnclosure!=$firstChar){
-                                $foundEnclosure="";
-                                break;
-                            }
-                        }
-                    }else{
-                        $foundEnclosure="";
-                        break;
-                    }
-                }else{
-                    break;
-                }   
-            }            
-        }
-        if ($foundEnclosure===null) $foundEnclosure="\"";
+        $foundEnclosure=$this->guessRowEnclosure($fields);                       
         $ret=new \stdClass;
         $ret->delimeter=$foundDelimeter;
         $ret->enclosure=$foundEnclosure;        

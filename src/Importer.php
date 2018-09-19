@@ -10,9 +10,17 @@ class Importer {
     protected $schema=array();
    
     
-    public static function fromFile(string $filePath,array $params=array()){
+    public static function fromFile(string $filePath,array $params=array(), array $remapExtensions = array()){
     if (!is_file($filePath)) throw new \Exception("Unable to open file '".$filePath."'!");
         $ext=strtoupper(pathinfo($filePath,PATHINFO_EXTENSION));        
+        if (!empty($remapExtensions)){
+            $remapExtensions=array_change_key_case($remapExtensions,CASE_UPPER);
+            $remapExtensions=array_filter(array_map(function ($t){
+                if (!class_exists(__NAMESPACE__.'\\Reader\\'.$t)) return false;
+                return $t;
+            }));
+            if (array_key_exists($ext,$remapExtensions)) $ext=$remapExtensions[$ext];
+        }
         $className=__NAMESPACE__.'\\Reader\\'.$ext;
         if (class_exists($className)){
             array_unshift($params,$filePath);            
