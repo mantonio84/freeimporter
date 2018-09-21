@@ -6,8 +6,7 @@ class SimpleColumn implements ColumnAdapter {
     protected $src=array();
     protected $tgt=null;
     
-    protected $rowData=null;
-    protected $rowIndex=null;        
+            
     protected $lbl=null;
     
     public function __construct($source,$target,$label){                
@@ -48,12 +47,7 @@ class SimpleColumn implements ColumnAdapter {
     public function value($input){
         return $input;
     }
-    
-    public function prepare($rowIndex,$rowData){
-        $this->rowIndex=$rowIndex;
-        $this->rowData=$rowData;
-    }
-    
+        
     public function name(){
         return $this->removeSpaces($this->tgt);
     }

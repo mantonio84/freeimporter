@@ -7,8 +7,7 @@ use Adapters\ColumnAdapter;
 class Importer {
     
     public $sourceData=null;
-    protected $schema=array();
-    private $bufferSchema=array();
+    protected $schema=array();    
     
     public static function fromFile(string $filePath,array $params=array(), array $remapExtensions = array()){
     if (!is_file($filePath)) throw new \Exception("Unable to open file '".$filePath."'!");
@@ -24,6 +23,7 @@ class Importer {
         $className=__NAMESPACE__.'\\Reader\\'.$ext;
         if (class_exists($className)){
             array_unshift($params,$filePath);            
+
             return new static(new $className(...$params));
         }else{
             throw new \Exception("Unable to find a valid reader for '".$filePath."'!");
@@ -99,40 +99,36 @@ class Importer {
             throw new \Exception("Invalid sourceData given!");
         }                
         if ($this->sourceData->isEmpty()) return array(); //Sei un fesso...
-        $this->bufferSchema=array();        
+                
         $ret=array();
         if (!is_array($schemaArray)) $schemaArray=null;
-        $check=__NAMESPACE__."\Adapters\ColumnAdapter";        
-        foreach ($this->sourceData as $rowIndex => $rowData){
+        $check=__NAMESPACE__."\Adapters\ColumnAdapter";    
+        if ($schemaArray!==null){            
+            foreach ($schemaArray as $h => $o){
+                if ($this->schemaHas($o)){                    
+                    $scm=$this->schemaGet($o);                                                 
+                    if (is_subclass_of($scm,$check)){
+                        $schemaArray[$h]=$scm;
+                    }else{
+                        unset($schemaArray[$h]);
+                    }
+                }
+            }            
+        }else{
+            $schemaArray=$this->guessColumns();
+        }              
+        $schemaArray=array_filter($schemaArray);              
+        if (empty($schemaArray)) return array();
+        foreach ($this->sourceData as $rowIndex => $rowData){            
             $row=array();
-            foreach ($rowData as $colHeader => $value){
-                if (array_key_exists($colHeader,$this->bufferSchema)){
-                    $scm=&$this->bufferSchema[$colHeader];
-                    $scm->prepare($rowIndex,$rowData);
-                    if ($scm->validate($value)){
-                        $row[$scm->target()]=$scm->value($value);
-                    }
-                    continue;
-                }
-                if ($schemaArray===null){
-                    $row=array_merge($ret,$this->parseSchema($rowIndex,$rowData,$colHeader,$value));
-                }else{                    
+            foreach ($rowData as $colHeader => $value){                                                            
                     if (array_key_exists($colHeader,$schemaArray)){
-                        $scm=$schemaArray[$colHeader];   
-                        if (is_string($scm)){
-                            if ($this->schemaHas($scm)){
-                                $scm=$this->schemaGet($scm);
-                            }
-                        }                     
-                        if (is_subclass_of($scm,$check)){       
-                            $this->bufferSchema[$colHeader]=&$scm;
-                            $scm->prepare($rowIndex,$rowData);
-                            if ($scm->validate($value)){
-                                $row[$scm->target()]=$scm->value($value);
-                            }
-                        }
+                        $scm=&$schemaArray[$colHeader];                                                                                     
+                        if ($scm->validate($value)){                                        
+                            $row[$scm->target()]=$scm->value($value);
+                        }                        
                     }
-                }
+                
             }
             $ret[]=$row;
         }
@@ -153,8 +149,7 @@ class Importer {
     public function guessColumn($colHeader){
         if (empty($this->schema)) return null;                        
         $ret=null;
-         foreach ($this->schema as &$scm){
-            $scm->prepare(null,null);
+         foreach ($this->schema as &$scm){            
             if ($this->checkColumnHeld($scm,$colHeader)){
                 $ret=$scm;
                 break;
@@ -171,21 +166,6 @@ class Importer {
         return $ret;
     }         
     
-    protected function parseSchema($rowIndex, $rowData, $colHeader, $value){
-        if (empty($this->schema)) return array(); //Sei un fesso...
-        if (empty($value)) return array();
-        $ret=array();
-        foreach ($this->schema as &$scm){
-            $scm->prepare($rowIndex,$rowData);
-            if ($this->checkColumnHeld($scm,$colHeader)){
-                $this->bufferSchema[$colHeader]=&$scm;
-                if ($scm->validate($value)){                    
-                    $ret[$scm->target()]=$scm->value();                    
-                    break;
-                }
-            }
-        }
-        return $ret;
-    }
+   
 }
 ?>
