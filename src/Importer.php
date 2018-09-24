@@ -142,10 +142,7 @@ class Importer {
             if (empty($row)){                
                 $ret[]=$row;
             }else{
-                $thisRowInvalidHeaders=array_diff($allTargets,array_intersect(array_keys($row),$allTargets));                
-                if (!empty($thisRowInvalidHeaders)){
-                    $row=array_merge($row,array_fill_keys($thisRowInvalidHeaders,null));
-                }            
+                     
                 ksort($row);
                 $ret[]=$row;
             }
