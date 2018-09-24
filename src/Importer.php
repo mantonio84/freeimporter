@@ -99,7 +99,7 @@ class Importer {
             throw new \Exception("Invalid sourceData given!");
         }                
         if ($this->sourceData->isEmpty()) return array(); //Sei un fesso...
-                
+        $tm=microtime(true);
         $ret=array();
         if (!is_array($schemaArray)) $schemaArray=null;
         $check=__NAMESPACE__."\Adapters\ColumnAdapter";    
@@ -125,8 +125,10 @@ class Importer {
                 return $itm->target();
             },$schemaArray);
         }
-        $scmHeaders=array_keys($schemaArray);        
-        foreach ($this->sourceData as $rowIndex => $rowData){            
+        $scmHeaders=array_keys($schemaArray);    
+            $tms=0;
+        foreach ($this->sourceData as $rowIndex => $rowData){   
+            $tm=microtime(true);
             $row=array();
             $thisRowValidHeaders=array_intersect(array_keys($rowData),$scmHeaders);                        
             foreach ($thisRowValidHeaders as $colHeader){
@@ -140,14 +142,17 @@ class Importer {
             if (empty($row)){                
                 $ret[]=$row;
             }else{
-                $thisRowInvalidHeaders=array_diff(array_keys($row),$allTargets);
+                $thisRowInvalidHeaders=array_diff($allTargets,array_intersect(array_keys($row),$allTargets));                
                 if (!empty($thisRowInvalidHeaders)){
                     $row=array_merge($row,array_fill_keys($thisRowInvalidHeaders,null));
                 }            
                 ksort($row);
                 $ret[]=$row;
             }
+            $tms+=(microtime(true)-$tm);
         }
+        echo number_format($tms/count($ret),4);
+        die();
         return $ret;
     }    
     
