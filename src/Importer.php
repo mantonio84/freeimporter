@@ -99,7 +99,7 @@ class Importer {
             throw new \Exception("Invalid sourceData given!");
         }                
         if ($this->sourceData->isEmpty()) return array(); //Sei un fesso...
-        $tm=microtime(true);
+        
         $ret=array();
         if (!is_array($schemaArray)) $schemaArray=null;
         $check=__NAMESPACE__."\Adapters\ColumnAdapter";    
@@ -128,7 +128,7 @@ class Importer {
         $scmHeaders=array_keys($schemaArray);    
             $tms=0;
         foreach ($this->sourceData as $rowIndex => $rowData){   
-            $tm=microtime(true);
+            
             $row=array();
             $thisRowValidHeaders=array_intersect(array_keys($rowData),$scmHeaders);                        
             foreach ($thisRowValidHeaders as $colHeader){
@@ -149,10 +149,9 @@ class Importer {
                 ksort($row);
                 $ret[]=$row;
             }
-            $tms+=(microtime(true)-$tm);
+            
         }
-        echo number_format($tms/count($ret),4);
-        die();
+       
         return $ret;
     }    
     
