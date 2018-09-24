@@ -5,12 +5,13 @@ class SimpleColumn implements ColumnAdapter {
     
     protected $src=array();
     protected $tgt=null;
-    
+    protected $maxOutputLength=0;
             
     protected $lbl=null;
     
-    public function __construct($source,$target,$label){                
-        $this->tgt=$target;        
+    public function __construct($source,$target,$label,$maxOutputLength=0){                
+        $this->tgt=$target;      
+        $this->maxOutputLength=intval($maxOutputLength);  
         if (!is_array($source)) $source=array($source);        
         foreach ($source as $s){
             $s=$this->removeSpaces($s);
@@ -45,6 +46,9 @@ class SimpleColumn implements ColumnAdapter {
     }
     
     public function value($input){
+        if ($this->maxOutputLength>0){
+            $input=substr($input,0,$this->maxOutputLength);
+        }
         return $input;
     }
         
