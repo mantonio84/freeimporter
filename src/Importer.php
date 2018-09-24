@@ -53,7 +53,7 @@ class Importer {
     }
     
     public function schemaHas($name){
-        return array_key_exists($name,$this->schema);
+        return (isset($this->schema[$name]));
     }
     
     public function schemaClear(){
@@ -68,7 +68,7 @@ class Importer {
                 return $this->schemaGet($k[$index]);
             }            
         }else if (is_string($index)){
-            if (array_key_exists($index,$this->schema)){
+            if (isset($this->schema[$index])){
                 return $this->schema[$index];
             }
         }else if (is_null($index)){
@@ -89,11 +89,11 @@ class Importer {
                 $this->schemaRemove($k[$index]);
             }
         }else if (is_string($index)){
-            if (array_key_exists($index,$this->schema)) unset($this->schema[$index]);
+            if (isset($this->schema[$index])) unset($this->schema[$index]);
         }
     }
     
-    public function extractData($schemaArray=null){       
+    public function extractData($schemaArray=null, $cbDataProcessor=null){       
         if (!is_subclass_of($this->sourceData,__NAMESPACE__."\\Reader\\Reader")){
             //Oltre che fesso sei pure cornuto....
             throw new \Exception("Invalid sourceData given!");
@@ -103,34 +103,50 @@ class Importer {
         $ret=array();
         if (!is_array($schemaArray)) $schemaArray=null;
         $check=__NAMESPACE__."\Adapters\ColumnAdapter";    
+        $allTargets=array();
         if ($schemaArray!==null){            
             foreach ($schemaArray as $h => $o){
                 if ($this->schemaHas($o)){                    
                     $scm=$this->schemaGet($o);                                                 
                     if (is_subclass_of($scm,$check)){
                         $schemaArray[$h]=$scm;
+                        $allTargets[]=$scm->target();
                     }else{
                         unset($schemaArray[$h]);
                     }
                 }
             }            
         }else{
-            $schemaArray=$this->guessColumns();
-        }              
-        $schemaArray=array_filter($schemaArray);              
+            $schemaArray=$this->guessColumns();            
+        }                                
         if (empty($schemaArray)) return array();
+        if (empty($allTargets)){
+            $allTargets=array_map(function ($itm){
+                return $itm->target();
+            },$schemaArray);
+        }
+        $scmHeaders=array_keys($schemaArray);        
         foreach ($this->sourceData as $rowIndex => $rowData){            
             $row=array();
-            foreach ($rowData as $colHeader => $value){                                                            
-                    if (array_key_exists($colHeader,$schemaArray)){
-                        $scm=&$schemaArray[$colHeader];                                                                                     
-                        if ($scm->validate($value)){                                        
-                            $row[$scm->target()]=$scm->value($value);
-                        }                        
-                    }
-                
+            $thisRowValidHeaders=array_intersect(array_keys($rowData),$scmHeaders);                        
+            foreach ($thisRowValidHeaders as $colHeader){
+                $value=$rowData[$colHeader];
+                $scm=$schemaArray[$colHeader];                                                                                     
+                if ($scm->validate($value)){                                        
+                    $row[$scm->target()]=$scm->value($value);
+                }                                                            
+            }            
+            if (is_callable($cbDataProcessor)) $row=call_user_func($cbDataProcessor,$row,$rowIndex,$rowData); 
+            if (empty($row)){                
+                $ret[]=$row;
+            }else{
+                $thisRowInvalidHeaders=array_diff(array_keys($row),$allTargets);
+                if (!empty($thisRowInvalidHeaders)){
+                    $row=array_merge($row,array_fill_keys($thisRowInvalidHeaders,null));
+                }            
+                ksort($row);
+                $ret[]=$row;
             }
-            $ret[]=$row;
         }
         return $ret;
     }    
@@ -146,7 +162,7 @@ class Importer {
         return false;
     }
     
-    public function guessColumn($colHeader){
+    private function guessColumn($colHeader){
         if (empty($this->schema)) return null;                        
         $ret=null;
          foreach ($this->schema as &$scm){            
@@ -161,7 +177,7 @@ class Importer {
     public function guessColumns(){
         $ret=array();
         $header=$this->sourceData->header();
-        if (empty($this->schema)) return array_combine($header,array_fill(0,count($header),null)); //Sei un fesso...
+        if (empty($this->schema)) return array(); //Sei un fesso...
         foreach ($header as $h) $ret[$h]=$this->guessColumn($h);
         return $ret;
     }         
