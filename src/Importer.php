@@ -7,7 +7,8 @@ use Adapters\ColumnAdapter;
 class Importer {
     
     public $sourceData=null;
-    protected $schema=array();    
+    protected $schema=array();
+    protected $fieldCleaner=null;    
     
     public static function fromFile(string $filePath,array $params=array(), array $remapExtensions = array()){
     if (!is_file($filePath)) throw new \Exception("Unable to open file '".$filePath."'!");
@@ -36,6 +37,10 @@ class Importer {
         }
         
     }
+    
+   public function setFieldCleaner($cb){
+        if ((is_callable($cb)) or ($is_null($cb))) $this->fieldCleaner=$cb;     
+   }
             
    public function schemaAdd($a){
         $valid=false;
@@ -132,7 +137,7 @@ class Importer {
             $row=array();
             $thisRowValidHeaders=array_intersect(array_keys($rowData),$scmHeaders);                        
             foreach ($thisRowValidHeaders as $colHeader){
-                $value=$rowData[$colHeader];
+                $value=$this->getFieldValueFromReader($rowData,$colHeader);                
                 $scm=$schemaArray[$colHeader];                                                                                     
                 if ($scm->validate($value)){                                        
                     $row[$scm->target()]=$scm->value($value);
@@ -151,6 +156,12 @@ class Importer {
        
         return $ret;
     }    
+    
+    private function getFieldValueFromReader(array &$rowData, $colHeader){
+        $ret=$rowData[$colHeader];
+        if (is_callable($this->fieldCleaner)) $ret=call_user_func($this->fieldCleaner,$ret,$colHeader);
+        return $ret;
+    }
     
     private function checkColumnHeld(&$scm,$colHeader){
         if ($scm->held($colHeader)) return true;
