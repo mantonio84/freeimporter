@@ -47,7 +47,7 @@ class SimpleColumn implements ColumnAdapter {
     
     public function value($input){
         if ($this->maxOutputLength>0){
-            $input=substr($input,0,$this->maxOutputLength);
+            $input=mb_substr($input,0,$this->maxOutputLength);
         }
         return $input;
     }

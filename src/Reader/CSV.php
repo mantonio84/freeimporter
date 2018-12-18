@@ -52,6 +52,7 @@ class CSV extends Reader implements \Countable, \ArrayAccess {
                 if ($d>0) $line=array_merge($line,array_fill(0,$d,null));                
             }
         }
+        $this->cleanUpContainer();
         $this->calculateFileHash($filePath);               
     }
     

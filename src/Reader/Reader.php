@@ -2,10 +2,10 @@
 
 namespace Mantonio84\FreeImporter\Reader;
 
-class Reader implements \Countable, \ArrayAccess, \Iterator{
+abstract class Reader implements \Countable, \ArrayAccess, \Iterator{
     
     protected $container=array();
-    protected $header=array();
+    protected $header=array();   
     public $fileHash="";
     private $position=0;
     private $hPrefix=null;
@@ -18,6 +18,14 @@ class Reader implements \Countable, \ArrayAccess, \Iterator{
         return implode("",array_intersect_assoc($a,$b));
     }
 
+    protected function cleanUpContainer(){  
+        array_walk_recursive($this->container, function (&$itm){                   
+            if ((is_string($itm)) and (!is_numeric($itm))) {                
+                $itm=preg_replace('/[^\x20-\x7e\x80\x96\xa3\xe0\xe8-\xe9\xec\xf2\xf9\xb0]/iu',"",$itm);
+                if (is_null($itm)) $itm="";                
+            }            
+        });            
+    }
     
     private function guessStringPrefix(array $arr){
         $ret="";
@@ -264,6 +272,7 @@ class Reader implements \Countable, \ArrayAccess, \Iterator{
     }
     
     public function beginResume(){
+        
         $data=json_encode(array("chk" => md5(microtime(true)), "container" => $this->container, "header" => $this->header, "fileHash" => $this->fileHash));
         return base64_encode($data);        
     }

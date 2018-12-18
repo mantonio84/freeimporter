@@ -66,6 +66,7 @@ class XLS extends Reader implements \Countable, \ArrayAccess {
             )); 
         }    
         if (is_callable($rowsFilter)) $this->container=array_values(array_filter(array_map($rowsFilter,$this->container)));
+        $this->cleanUpContainer();
         $this->calculateFileHash($filePath);        
     }
     
