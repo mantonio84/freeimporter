@@ -98,7 +98,7 @@ class Importer {
         }
     }
     
-    public function extractData($schemaArray=null, $cbDataProcessor=null){       
+    public function extractData($schemaArray=null, $cbDataProcessor=null, $maxRows=0){                
         if (!is_subclass_of($this->sourceData,__NAMESPACE__."\\Reader\\Reader")){
             //Oltre che fesso sei pure cornuto....
             throw new \Exception("Invalid sourceData given!");
@@ -132,6 +132,8 @@ class Importer {
         }
         $scmHeaders=array_keys($schemaArray);    
             $tms=0;
+        $maxRows=intval($maxRows);
+        $done=0;                        
         foreach ($this->sourceData as $rowIndex => $rowData){   
             
             $row=array();
@@ -151,7 +153,8 @@ class Importer {
                 ksort($row);
                 $ret[]=$row;
             }
-            
+            $done++;
+            if (($done>$maxRows) and ($maxRows>0)) break;   
         }
        
         return $ret;
