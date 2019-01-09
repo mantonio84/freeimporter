@@ -154,7 +154,7 @@ class Importer {
                 $ret[]=$row;
             }
             $done++;
-            if (($done>$maxRows) and ($maxRows>0)) break;   
+            if (($done>=$maxRows) and ($maxRows>0)) break;   
         }
        
         return $ret;
