@@ -207,7 +207,9 @@ abstract class Reader implements \Countable, \ArrayAccess, \Iterator{
             if (!$this->hasHeader()){
                 return $this->container[$offset];
             }else{
-                return array_combine($this->header,$this->container[$offset]);
+                $m=min(count($this->header),count($this->container[$offset]));
+                if ($m==0) return array();
+                return array_combine(array_slice($this->header,0,$m),array_slice($this->container[$offset],0,$m));
             }                                
         }else{
             return null;
