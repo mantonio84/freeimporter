@@ -1,5 +1,5 @@
 {
-	"name" : "mantonio84/FreeImporter",
+	"name" : "mantonio84/free-importer",
 	"description" : "A PHP component for importing excel, csv, txt files into a database table",
 	"type" : "library",
 	"require" : {
