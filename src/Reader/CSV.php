@@ -61,7 +61,7 @@ class CSV extends Reader implements \Countable, \ArrayAccess {
         if (strlen($line)<3) return null;
         $delimeters=[";",",","/","|"];
         if (!empty($otherDelimeters)){    
-            $otherDelimeters=array_filter($otherDelimeters,function ($itm){
+            $otherDelimeters=\Arr::filter($otherDelimeters,function ($itm){
                return (strlen($itm)==0); 
             }); 
             $delimeters = array_values(array_unique(array_merge($delimeters,$otherDelimeters)));

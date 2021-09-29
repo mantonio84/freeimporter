@@ -65,7 +65,7 @@ class XLS extends Reader implements \Countable, \ArrayAccess {
                 TRUE         // Should the array be indexed by cell row and cell column
             )); 
         }    
-        if (is_callable($rowsFilter)) $this->container=array_values(array_filter(array_map($rowsFilter,$this->container)));
+        if (is_callable($rowsFilter)) $this->container=array_values(\Arr::filter(array_map($rowsFilter,$this->container)));
         $this->cleanUpContainer();
         $this->calculateFileHash($filePath);        
     }
@@ -80,7 +80,7 @@ class XLS extends Reader implements \Countable, \ArrayAccess {
     
     private function getRowBounds(array $row){
         if (empty($row)) return false;
-        $row=array_filter($row);
+        $row=\Arr::filter($row);
         if (empty($row)) return false;
         $row=array_keys($row);
         $lc=intval(reset($row))+1;

@@ -15,7 +15,7 @@ class Importer {
         $ext=strtoupper(pathinfo($filePath,PATHINFO_EXTENSION));        
         if (!empty($remapExtensions)){
             $remapExtensions=array_change_key_case($remapExtensions,CASE_UPPER);
-            $remapExtensions=array_filter(array_map(function ($t){
+            $remapExtensions=\Arr::filter(array_map(function ($t){
                 if (!class_exists(__NAMESPACE__.'\\Reader\\'.$t)) return false;
                 return $t;
             },$remapExtensions));
